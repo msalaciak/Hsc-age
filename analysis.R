@@ -179,4 +179,18 @@ marrow.droplet <- RenameIdents(marrow.droplet, new.cluster.ids)
 # noLegend() removes the side legend which you do not need anymore if you label directly on the clusters
 DimPlot(marrow.droplet, label = TRUE, repel=TRUE, label.size = 3) + NoLegend()
 
+# dimplot zooming in on the clusters 9 and 16
+# we already have a seurat object that subset the droplet marrow object into just 3m and 24m age groups
+# now we can subset this again just to have clusters 9 and 16 (on my seurat object i did not rename anything yet so they are still 9 and 16)
+# your seurat object has been renamed to hematopoietic precursor cell_1 and hematopoietic precursor cell_2
 
+c.9.16 <- subset(droplet.3months.24months, idents = c("9","16") )
+
+# shows which cells belong to which age group
+DimPlot(c.9.16,group.by ="age")
+
+# both age group clustering side by side
+DimPlot(c.9.16,split.by ="age",label=TRUE)
+
+# both age groups together
+DimPlot(c.9.16,label=TRUE)
