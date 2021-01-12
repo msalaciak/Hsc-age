@@ -151,4 +151,32 @@ droplet.3months.24months <- subset(x = marrow.droplet, subset = age == "3m" | ag
 # now we can use the dimplot group.by function
 DimPlot(droplet.3months.24months, group.by ="age")
 
+# how to label clusters
+# first we want to save the original cluster numbers just in case, so we will copy it to a new column in the meta data
+# I named it old.ident.louvain just because it is the old cluster identity from the louvain algorithm 
+# you have options, you can do this for the marrow droplet and facs objects before subsetting so when you subset the labels are already there
+# if you dont want to redo that you can just do this for each object and just change the object variable name
+# keep in mind facs will have different clustering labels!
+
+marrow.droplet[["old.ident.louvain"]] <- Idents(object = marrow.droplet)
+
+# now we make a vector of the labels, going from 0 to 25
+# some repeating labels need to have an additional label so they remain unique, you can't have the same label repeating twice
+# please note I just picked the first label for each cluster from the metadata, you might need to go through this carefully and figure out what the label should really be
+
+new.cluster.ids <- c("granulocyte_1", 'granulocyte_2','granulocyte_3','erythroblast','promonocyte','granulocytopoietic cell_1',
+                     'granulocytopoietic cell_2','granulocytopoietic cell_3','naive T cell','hematopoietic precursor cell_1','monocyte_1',
+                     'monocyte_2','macrophage','granulocytopoietic cell_4','proerythroblast','granulocytopoietic cell_5','hematopoietic precursor cell_2',
+                     'immature B cell','granulocyte_3','granulocytopoietic cell_6','precursor B cell','granulocyte_4','megakaryocyte-erythroid progenitor cell',
+                     'NK cell','granulocytopoietic cell_5','basophil')
+
+# this renames and sets the new identity
+names(new.cluster.ids) <- levels(marrow.droplet)
+marrow.droplet <- RenameIdents(marrow.droplet, new.cluster.ids)
+
+# keep note of these new arguments, repel and label size, this allows control of the cluster labels
+# repeal makes it such that it won't overlap the over labels, and label.size changes the font size.
+# noLegend() removes the side legend which you do not need anymore if you label directly on the clusters
+DimPlot(marrow.droplet, label = TRUE, repel=TRUE, label.size = 3) + NoLegend()
+
 
