@@ -67,6 +67,8 @@ marrow.droplet.markers.age <- FindMarkers(marrow.droplet, ident.1 = "3m", ident.
 marrow.facs.markers.age <- FindMarkers(marrow.facs, ident.1 = "3m", ident.2="24m",group.by="age",
                     only.pos = TRUE, min.pct = 0.25,logfc.threshold = 0.25)
 
+
+
 # once this is done we will have two data frame with all the DE genes. you will notice the genes are the index of the dataframe and not a column
 # to fix this just run this code
 # what this code does is takes all the genes from the index and makes it a column and resets the index to be numerical from 1 to x.
@@ -103,7 +105,7 @@ marrow.facs.markers.24m <- FindAllMarkers(facs.24months, only.pos = TRUE, min.pc
 # if we want to see the level of expression of a gene on the dimension plot we can use this function
 
 # if we use the marrow.droplet data object, it contains all the time points
-FeaturePlot(marrow.droplet, features = c("Fos"),cols = c("grey", "red"))
+FeaturePlot(marrow.droplet, features = c("Fos","Junb"),cols = c("grey", "red"))
 
 # if we wanted to compare across timepoints we can use the split.by function
 
@@ -112,8 +114,13 @@ FeaturePlot(marrow.droplet, features = c("Fos"),cols = c("grey", "red"),split.by
 # but as you can see, it makes the plot a little hard to read since there are 6 timepoints 
 # we can use featureplot on our subset data to solve this
 
-FeaturePlot(droplet.3months, features = c("Fos"),cols = c("grey", "red")) + ggtitle("3 months")
-FeaturePlot(droplet.24months, features = c("Fos"),cols = c("grey", "red")) + ggtitle("24 months")
+# if we save the feature plots as variables than we can use the + to create a facet plot
+
+p1 <-FeaturePlot(droplet.3months, features = c("Fos"),cols = c("grey", "red")) + ggtitle("3 months")
+p2<-FeaturePlot(droplet.24months, features = c("Fos"),cols = c("grey", "red")) + ggtitle("24 months")
+
+#facet plot having both feature plots next to each other
+p1+p2
 
 # if we want to see what # cluster we can add label = TRUE
 
@@ -122,4 +129,26 @@ FeaturePlot(droplet.24months, features = c("Fos"),cols = c("grey", "red"), label
 
 # now if we looked at our marrow.droplet.markers.age dataframe where we used the FindMarkers function comparing timepoints 3 and 24 we can see the decrease
 # in fos which is shown on this plot
+
+# If we wanted to compare a particular cluster between both time points we can use this function
+# it is the same FindMarkers function, except we will group by timepoints (3m and 24m), and the subset.ident is the cluster we want to compare
+# for this example, i want to compare cluster 14, so pct.1 will be cluster 14 at 3m and pct.2 will be cluster 14 at 24m
+
+marrow.droplet.markers.clusterCompare <- FindMarkers(marrow.droplet, ident.1 = "3m", ident.2="24m",group.by="age",
+                            only.pos = FALSE, min.pct = -Inf,logfc.threshold = 0,subset.ident = "14")
+
+# our little hacky fix to make the gene names of the index a column of genes
+marrow.droplet.markers.clusterCompare <- cbind(gene = rownames(marrow.droplet.markers.clusterCompare), marrow.droplet.markers.clusterCompare)
+rownames(marrow.droplet.markers.clusterCompare) <- 1:nrow(marrow.droplet.markers.clusterCompare)
+marrow.droplet.markers.clusterCompare<- marrow.droplet.markers.clusterCompare[, c(2,3,4,5,6,1)]
+
+# if we wanted to overlay the dimplot between age groups 3 and 24 and use the group.by feature we have to subset the Seurat object again
+# this time we want to subset the data by age 3m or 24m (this will give us both 3m and 24m)
+
+
+droplet.3months.24months <- subset(x = marrow.droplet, subset = age == "3m" | age == "24m")
+
+# now we can use the dimplot group.by function
+DimPlot(droplet.3months.24months, group.by ="age")
+
 
