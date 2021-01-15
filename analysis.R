@@ -194,3 +194,62 @@ DimPlot(c.9.16,split.by ="age",label=TRUE)
 
 # both age groups together
 DimPlot(c.9.16,label=TRUE)
+
+
+# subclustering cluster 9 from ages 3/24m, idents is 9 for cluster 9 (my object doesn't have the new labels so make sure to change this!)
+cluster9.droplet <- subset(droplet.3months.24months, idents = c("9") )
+
+# plot to make sure the cluster is fine
+DimPlot(cluster9.droplet,split.by ="age",label=TRUE)
+
+# now we need to re-do the analyze from the beginning, skipping the QC filtering steps since this object is already filtered.
+
+# this function finds high cell-to-cell variation
+# the parameters used here are the default from seurat
+cluster9.droplet <- FindVariableFeatures(cluster9.droplet, selection.method = "vst", nfeatures = 2000)
+
+# scale the data
+all.genes <- rownames(cluster9.droplet)
+cluster9.droplet <- ScaleData(cluster9.droplet, features = all.genes)
+
+# perform PCA
+cluster9.droplet <- RunPCA(cluster9.droplet, features = VariableFeatures(object = cluster9.droplet))
+
+# look at the PCA dimplot now
+DimPlot(cluster9.droplet, reduction = "pca")
+
+# now we do a elbow plot to determine how many components we should include in our analysis 
+# Where the bend (elbow) occurs gives us a good idea of which components hold the most variability (the important data!)
+ElbowPlot(cluster9.droplet)
+
+# we choose the dims based on the elbow plot, the resolution paramter sometimes requires tuning to give the best clustering results
+# this part is always tricky and sometimes you may need to change the dims a few times, but from looking at the elbow plot lets go with 12 dims
+
+
+# default algorithm is louvain (which is what we were using in the previous analysis!)
+# also by looking at their results in the params section of the reduction table within the seurat object, they used a resolution of 1
+# we will do the same and see how it looks
+cluster9.droplet <- FindNeighbors(cluster9.droplet, dims = 1:12)
+cluster9.droplet <- FindClusters(cluster9.droplet, resolution = 1)
+
+# now we can run a umap and tsne, keep the dims parameter the same value from FindNeighbours
+cluster9.droplet <- RunUMAP(cluster9.droplet, dims = 1:12)
+cluster9.droplet <- RunUMAP(cluster9.droplet, dims = 1:12)
+
+# look at the UMAP dimplot now
+DimPlot(cluster9.droplet, label= TRUE)
+
+# when looking at the metadata becareful! louvain and leiden don't mean anything anymore...the important column is seurat_clusters!
+
+# dimplot split by age
+DimPlot(cluster9.droplet, label= TRUE, split.by ="age")
+
+# now we can fun the findallmarkers function and see if we can label the clusters (note this is using data from 3m/24m age groups!)
+# you might have to adjust these parameters
+cluster9.droplet.markers <- FindAllMarkers(cluster9.droplet, only.pos = FALSE, min.pct = 0.10, logfc.threshold = 0.25)
+
+# you can run the findMarkers function next to look between clusters and look between age groups
+
+
+
+
