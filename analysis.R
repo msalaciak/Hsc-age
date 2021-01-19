@@ -3,6 +3,7 @@
 library(Seurat)
 library(SeuratDisk)
 library(ggplot2)
+library(pheatmap)
 
 
 # The given h5ad files were created using an older annData (h5ad file) format
@@ -61,7 +62,7 @@ DimPlot(droplet.24months, label = TRUE) + ggtitle("droplet 24 months")
 # this will give the DE across all genes found in each cluster, if we want to look at a specific cluster we can add subset.ident ="CLUSTER OF INTEREST" 
 # to the function.
 
-marrow.droplet.markers.age <- FindMarkers(marrow.droplet, ident.1 = "3m", ident.2="24m",group.by="age",
+marrow.droplet.markers.age.test <- FindMarkers(marrow.droplet, ident.1 = "3m", ident.2="24m",group.by="age",
                          only.pos = TRUE, min.pct = 0.25,logfc.threshold = 0.25)
 
 marrow.facs.markers.age <- FindMarkers(marrow.facs, ident.1 = "3m", ident.2="24m",group.by="age",
@@ -239,6 +240,7 @@ cluster9.droplet <- RunUMAP(cluster9.droplet, dims = 1:12)
 # look at the UMAP dimplot now
 DimPlot(cluster9.droplet, label= TRUE)
 
+
 # when looking at the metadata becareful! louvain and leiden don't mean anything anymore...the important column is seurat_clusters!
 
 # dimplot split by age
@@ -250,6 +252,109 @@ cluster9.droplet.markers <- FindAllMarkers(cluster9.droplet, only.pos = FALSE, m
 
 # you can run the findMarkers function next to look between clusters and look between age groups
 
+# heatmap
+
+# we will use the droplet.3months.24months object since we want to compare those months and use subset in the heatmap function to get cluster 9
+# remember its a different label for you!
+
+# In order to use a heatmap function we need to scale the data / find variable features
+# this is not required for DEG, but we scale the data and use the FindVariablefeatures when we want to cluster/heatmap stuff.
+
+droplet.3months.24months <- FindVariableFeatures(droplet.3months.24months, selection.method = "vst", nfeatures = 2000)
+all.genes <- rownames(droplet.3months.24months)
+droplet.3months.24months <- ScaleData(droplet.3months.24months, features = all.genes)
 
 
+# now we take a list of genes we want to use as features, since they are not common seperated we need to do some manipulation
+# first we put it into a vector which will keep it seperated by new lines
+
+gene_list <- c("Fosb
+Dusp1
+Eif2s3y
+Neat1
+Fos
+Klf6
+Jun
+Ddx3y
+Tsix
+Egr1
+Dhx9
+Ppp1r10
+Slc7a5
+Cct6a
+2610018G03Rik
+Srp54a
+Ddx23
+Supt6h
+Aff4
+Atf7ip
+Ttc37
+Erbb2ip
+Elf2
+Ccl3
+Casp3
+Myl10
+Ctdspl2
+Cd69
+Brca2
+A630007B06Rik
+Tdg
+Tnfaip3
+Kif13b
+D14Abb1e
+Lcorl
+2810008D09Rik
+AI314180
+Ier3
+Thbs1
+Tob2
+Hsph1
+Dio2
+Cntln
+Tec
+Mcph1
+Gm13034
+Mreg
+D830031N03Rik
+Dhx29
+Kdm5c
+BC018507
+Bmp2k
+Nup98
+Zbed6
+Tnfrsf13b
+Vps13a
+Serpina3g
+Hist2h2ac
+Rn45s
+Btbd7
+Zbtb38
+Hmga1
+Tmem88
+Rev3l
+Pola1
+Nupr1
+Kdm5d
+Vegfa
+Mfap3l")
+
+# now we split the gene_list by "\n" which is the escape character letting R and the compiler to know it is a new line
+gene_list <-strsplit(gene_list, "\n")
+# we use unlsit to break down the list into just a vector of characters! exactly what we want!
+gene_list<-unlist(gene_list)
+
+# for some reason the DoHeatMap function is weird and doesn't ignore the empty age group variables (3m,18m,etc) so we need to remove them from the 
+# factor levels...R has a function called droplevels for this exact issue
+
+droplet.3months.24months@meta.data$age<-droplevels(droplet.3months.24months@meta.data$age) 
+
+# now we can use the seurat doheatmap function, inside we have our subset function to select cluster 9 and we can group.by age
+# now you will notice it looks a bit hard to read...we can use the downsample function of seurat's subset to select a sample of cells
+# they recommend this for heatmaps so its easier to read...not sure exactly how their downsample function is performed but we can look into that!
+# I gave a few examples to compare no downsample to different levels of downsampling.
+
+DoHeatmap(subset(droplet.3months.24months,idents = c("9")) ,features=gene_list, group.by ="age")
+DoHeatmap(subset(droplet.3months.24months,idents = c("9"), downsample=300) ,features=gene_list, group.by ="age")
+DoHeatmap(subset(droplet.3months.24months,idents = c("9"), downsample=100) ,features=gene_list, group.by ="age")
+DoHeatmap(subset(droplet.3months.24months,idents = c("9"), downsample=50) ,features=gene_list, group.by ="age")
 
