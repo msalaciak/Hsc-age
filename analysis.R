@@ -55,6 +55,7 @@ DimPlot(droplet.3months, label = TRUE) + ggtitle("droplet 3 months")
 DimPlot(droplet.24months, label = TRUE) + ggtitle("droplet 24 months")
 
 
+
 # to do differential expression between age groups we don't need to split the data up
 # we can use the built in group.by function in seurat
 # in our case, we will use group.by age and the first identity is "3 months" compared to the second identity which is "24 months"
@@ -357,4 +358,27 @@ DoHeatmap(subset(droplet.3months.24months,idents = c("9")) ,features=gene_list, 
 DoHeatmap(subset(droplet.3months.24months,idents = c("9"), downsample=300) ,features=gene_list, group.by ="age")
 DoHeatmap(subset(droplet.3months.24months,idents = c("9"), downsample=100) ,features=gene_list, group.by ="age")
 DoHeatmap(subset(droplet.3months.24months,idents = c("9"), downsample=50) ,features=gene_list, group.by ="age")
+
+# this block of code is to look at the average gene expression to double check that DEG's make sense
+
+# basic feature plot split by age
+FeaturePlot(marrow.droplet, features = c("Fosb","Jun"),cols = c("grey", "red"),split.by = "age") 
+FeaturePlot(droplet.24months, features = c("Fosb","Jun"),cols = c("grey", "red"))
+
+# calculating the average gene expression per cell in each cluster 
+# looking at 3m and 24 seurat objects
+avg.droplet.3months<- log1p(AverageExpression(droplet.3months, verbose = FALSE)$RNA)
+avg.droplet.3months$gene <- rownames(avg.droplet.3months)
+
+avg.droplet.24months<- log1p(AverageExpression(droplet.24months, verbose = FALSE)$RNA)
+avg.droplet.24months$gene <- rownames(avg.droplet.24months)
+
+# summing the rows of the gene of interest to see if there is a big difference in total average gene expression 
+sum(avg.droplet.3months["Fosb",1:26])
+sum(avg.droplet.24months["Fosb",1:26])
+
+sum(avg.droplet.3months["Jun",1:26])
+sum(avg.droplet.24months["Jun",1:26])
+
+
 
