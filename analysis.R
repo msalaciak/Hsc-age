@@ -381,4 +381,45 @@ sum(avg.droplet.3months["Jun",1:26])
 sum(avg.droplet.24months["Jun",1:26])
 
 
+# subset facs dataset clusters 1,3,9 to recluster together
+# first we need to subset the facs dataset to just have 3m/24m age groups
+facs.3months.24months <- subset(x = marrow.facs, subset = age == "3m" | age == "24m")
+# now we subset again but only grabbing the clusters we want
+facs.c.1.3.9 <- subset(facs.3months.24months, idents = c("1","3","9") )
+
+# now we wil repeat the exact same steps we did when we re-clustered cluster 9 from the droplet dataset
+# plot to make sure the cluster is fine
+DimPlot(facs.c.1.3.9,split.by ="age",label=TRUE)
+
+# now we need to re-do the analyze from the beginning, skipping the QC filtering steps since this object is already filtered.
+
+
+facs.c.1.3.9 <- FindVariableFeatures(facs.c.1.3.9, selection.method = "vst", nfeatures = 2000)
+
+
+all.genes <- rownames(facs.c.1.3.9)
+facs.c.1.3.9 <- ScaleData(facs.c.1.3.9, features = all.genes)
+
+facs.c.1.3.9 <- RunPCA(facs.c.1.3.9, features = VariableFeatures(object = facs.c.1.3.9))
+
+DimPlot(facs.c.1.3.9, reduction = "pca")
+
+# take a look at the elbow plot and see how many dimensions you want to keep (i think 10-14 is okay for this one)
+ElbowPlot(facs.c.1.3.9)
+
+# adjust the resolution to see how it changes the clustering...at 0.8 it seems okay but clusters 10 and 11 seem a bit strange!
+facs.c.1.3.9 <- FindNeighbors(facs.c.1.3.9, dims = 1:12)
+facs.c.1.3.9 <- FindClusters(facs.c.1.3.9, resolution = 0.8)
+
+# now we can run a umap and tsne, keep the dims parameter the same value from FindNeighbours
+facs.c.1.3.9 <- RunUMAP(facs.c.1.3.9, dims = 1:12)
+
+# look at the UMAP dimplot now
+DimPlot(facs.c.1.3.9, label= TRUE)
+
+
+DimPlot(facs.c.1.3.9, label= TRUE, split.by ="age")
+
+
+facs.c.1.3.9.markers <- FindAllMarkers(facs.c.1.3.9, only.pos = FALSE, min.pct = 0.10, logfc.threshold = 0.25)
 
